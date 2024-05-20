@@ -1,47 +1,53 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('DOCKER_HUB_CREDENTIALS')
+        DOCKER_REGISTRY = 'merveagacayak/app'
+        DOCKER_CREDENTIALS = 'Jenkins'
+        DOCKER_IMAGE = ''
     }
+
     stages {
         stage('Checkout') {
             steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/merveaa/project3--devops', branch: 'main'
+                git branch: 'main', url: 'https://github.com/merveaa/project3--devops'
             }
         }
+
         stage('Build JAR') {
             steps {
-                bat 'gradlew clean bootJar'
+                script {
+                        bat './gradlew clean bootJar'
+                }
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t merveagacayak/app .'
+                script {
+                        DOCKER_IMAGE = docker.build("${DOCKER_REGISTRY}:latest")
+                }
             }
         }
-        stage('Login to DockerHub') {
+
+        stage('Push Docker Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        bat 'echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin'
+                    docker.withRegistry('', DOCKER_CREDENTIALS) {
+                        DOCKER_IMAGE.push()
                     }
                 }
             }
         }
-        stage('Push Image to DockerHub') {
-            steps {
-                bat 'docker push merveagacayak/app'
-            }
-        }
-        stage('Deploy to Minikube') {
-            steps {
-                script {
-                    bat 'kubectl apply -f deployment.yml'
-                }
-            }
-        }
     }
+
     post {
+        success {
+            echo 'Pipeline finished successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
         always {
             echo 'Pipeline finished.'
         }
