@@ -1,18 +1,19 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_REGISTRY = 'merveagacayak/app'
-        DOCKER_CREDENTIALS = 'Jenkins'
-        DOCKER_IMAGE = ''
-        KUBECONFIG_CREDENTIALS_ID = 'kubeconfig'
+        DOCKER_REGISTRY = 'mihrinurilunt/app'  // Docker Hub repository
+        DOCKER_CREDENTIALS = 'Jenkins'  // Jenkins credentials id for Docker Hub
+        GITHUB_TOKEN = credentials('GithubToken')  // Jenkins credentials id for GitHub token
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/merveaa/project3--devops'
+                git branch: 'main', url: 'https://github.com/mihrinurilunt/project3--devops'
             }
         }
+
         stage('Build JAR') {
             steps {
                 script {
@@ -20,13 +21,15 @@ pipeline {
                 }
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    DOCKER_IMAGE = docker.build("${DOCKER_REGISTRY}:latest")
+                    DOCKER_IMAGE = docker.build("mihrinurilunt/devops:latest")
                 }
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 script {
@@ -36,29 +39,17 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
-                    steps {
-                        script {
-                            withCredentials([string(credentialsId: KUBECONFIG_CREDENTIALS_ID, variable: 'KUBECONFIG_CONTENT_BASE64')]) {
-                                writeFile file: 'kubeconfig.base64', text: KUBECONFIG_CONTENT_BASE64
-                                bat 'certutil -decode kubeconfig.base64 kubeconfig'
-                                bat 'kubectl --kubeconfig=kubeconfig apply -f deployment.yaml'
-                                bat 'kubectl --kubeconfig=kubeconfig apply -f service.yaml'
-                            }
-                        }
-                    }
-                }
-            }
+    }
 
-            post {
-                success {
-                    echo 'Pipeline finished successfully.'
-                }
-                failure {
-                    echo 'Pipeline failed.'
-                }
-                always {
-                    echo 'Pipeline finished.'
-                }
-            }
+    post {
+        success {
+            echo 'Pipeline finished successfully.'
         }
+        failure {
+            echo 'Pipeline failed.'
+        }
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
+}
