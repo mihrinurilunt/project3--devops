@@ -17,7 +17,7 @@ pipeline {
         stage('Build JAR') {
             steps {
                 script {
-                        bat './gradlew clean bootJar'
+                    bat './gradlew clean bootJar'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                        DOCKER_IMAGE = docker.build("${DOCKER_REGISTRY}:latest")
+                    DOCKER_IMAGE = docker.build("${DOCKER_REGISTRY}:latest")
                 }
             }
         }
@@ -35,6 +35,17 @@ pipeline {
                 script {
                     docker.withRegistry('', DOCKER_CREDENTIALS) {
                         DOCKER_IMAGE.push()
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        sh 'kubectl apply -f deployment.yaml'
+                        sh 'kubectl apply -f service.yaml'
                     }
                 }
             }
