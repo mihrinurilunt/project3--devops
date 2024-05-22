@@ -40,17 +40,19 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    withKubeConfig([credentialsId: 'kubeconfig']) {
-                        sh 'kubectl apply -f deployment.yaml'
-                        sh 'kubectl apply -f service.yaml'
-                    }
-                }
-            }
-        }
-    }
+    stage('Deploy to Kubernetes') {
+             steps {
+                 script {
+                     withCredentials([string(credentialsId: KUBECONFIG_CREDENTIALS_ID, variable: 'KUBECONFIG_CONTENT')]) {
+                         writeFile file: 'kubeconfig', text: KUBECONFIG_CONTENT
+                         bat 'kubectl --kubeconfig=kubeconfig apply -f deployment.yaml'
+                         bat 'kubectl --kubeconfig=kubeconfig apply -f service.yaml'
+                     }
+                 }
+             }
+         }
+     }
+
 
     post {
         success {
