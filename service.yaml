@@ -3,11 +3,10 @@ kind: Service
 metadata:
   name: devops-gradle-service
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: devops-gradle
   ports:
     - protocol: TCP
       port: 8081
       targetPort: 8081
-      nodePort: 30001  # İstediğiniz bir portu seçebilirsiniz
